@@ -72,11 +72,6 @@ def client_handler(client_socket: socket.socket, address: socket_address) -> Non
         first_line = headers.split("\r\n")[0]  # GET /home.html HTTP/1.1
         req_url = first_line.split(" ")[1]
 
-        if req_url == "/favicon.ico":
-            # wright code for favicon.ico
-            client_socket.close()
-            return
-
         req_file_path = Path(f"./views{req_url}")  # eg: ./views/index.html
 
         res_file = ""
@@ -86,7 +81,15 @@ def client_handler(client_socket: socket.socket, address: socket_address) -> Non
             "Connection: close\r\n\r\n"
         )
 
-        if req_url == "/":
+        if req_url == "/favicon.ico":
+            res_file = "./views/favicon.svg"
+            res_header = (
+                "HTTP/1.1 200 OK\r\n"
+                "Content-Type: image/svg+xml\r\n"
+                "Connection: close\r\n\r\n"
+            )
+
+        elif req_url == "/":
             res_file = "./views/index.html"
 
         elif req_file_path.exists() and req_file_path.is_file():
@@ -103,10 +106,10 @@ def client_handler(client_socket: socket.socket, address: socket_address) -> Non
 
         with open(res_file, "rb") as f:
             # apply stream response
-            binary_html_content = f.read()
+            file_content = f.read()
 
         client_socket.sendall(res_header.encode())
-        client_socket.sendall(binary_html_content)
+        client_socket.sendall(file_content)
 
     finally:
         client_socket.close()

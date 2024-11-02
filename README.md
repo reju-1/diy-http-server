@@ -4,7 +4,7 @@ A basic multi-threaded Python HTTP server that serves static HTML files.
 
 ## Requirements
 
-- minimum `python version : 3.4`
+- minimum `python version : 3.5`
 
 ## Setup
 

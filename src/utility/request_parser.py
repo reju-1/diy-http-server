@@ -5,10 +5,10 @@ from typing import Tuple, Dict
 CHUNK_SIZE: int = 1024 * 4  # 4KB
 
 
-def _parse_header(raw_headers: str) -> Dict[str, str | int]:
+def _parse_header(raw_headers: str) -> Dict[str, str | int | float]:
     """
     Parameters:
-        raw_header: str
+        raw_headers: str
 
     Returns:
         Header: Dict
@@ -32,11 +32,10 @@ def _parse_header(raw_headers: str) -> Dict[str, str | int]:
             key = key.strip()
             value = value.strip()
 
-            # Convert value to integer if it represents a number
-            if value.isdigit():
-                headers[key] = int(value)
-            else:
-                headers[key] = value
+            try:
+                headers[key] = float(value) if "." in value else int(value)
+            except ValueError:
+                headers[key] = value  # Keep as string if not a number
 
     return headers
 
@@ -97,8 +96,8 @@ def request_parser(client_socket: socket.socket) -> Tuple[Dict[str, str | int], 
     while True:
         chunk = client_socket.recv(CHUNK_SIZE).decode()
         request += chunk
-        if "\r\n\r\n" in request:
-            raw_headers, body = request.split("\r\n\r\n", 1)  # Split headers and body
+        if "\r\n\r\n" in request:  # Check for header-body separator
+            raw_headers, body = request.split("\r\n\r\n", 1)
             break
 
     headers = _parse_header(raw_headers)

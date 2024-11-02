@@ -1,12 +1,70 @@
+import json
 import socket
 from pathlib import Path
 from typing import Tuple, Dict
+from urllib.parse import unquote_plus
+
 
 CHUNK_SIZE: int = 1024 * 4  # 4KB
 
 
-def _parse_header(raw_headers: str) -> Dict[str, str | int | float]:
+def _parse_url_encoded_body(body: str) -> Dict[str, any]:
     """
+    Parses a URL-encoded body string into a dictionary.
+    """
+    parsed_data = {}
+
+    pairs = body.split("&")
+    for pair in pairs:
+        if "=" in pair:
+            key, value = pair.split("=", 1)
+
+            # Decode and strip each key and value
+            parsed_data[unquote_plus(key)] = unquote_plus(value)
+        else:
+            # For key with no value (e.g., "key=")
+            parsed_data[unquote_plus(pair)] = ""
+
+    return parsed_data
+
+
+def _parse_json_body(body: str) -> Dict[str, any]:
+    """
+    Parses JSON body data into a dictionary.
+    """
+    try:
+        return json.loads(body)
+    except json.JSONDecodeError:
+        return {}  # for invalid Json
+
+
+def _parse_body(body: str, content_type: str) -> dict | str:
+    """
+    Parse request body
+
+    Parameters:
+        body: str
+        content_type: str
+
+    Returns:
+        [str or dict]
+    """
+
+    content_parser = {
+        "application/x-www-form-urlencoded": _parse_url_encoded_body,
+        "application/json": _parse_json_body,
+    }
+
+    if content_type in content_parser:
+        body = content_parser[content_type](body)
+
+    return body
+
+
+def _parse_header(raw_headers: str) -> Dict[str, any]:
+    """
+    Parses raw header into a dictionary.
+
     Parameters:
         raw_headers: str
 
@@ -40,8 +98,9 @@ def _parse_header(raw_headers: str) -> Dict[str, str | int | float]:
     return headers
 
 
-# Todo: complete Json or url-encoded parsing
-def _parse_body(client_socket: socket.socket, initial_body: str, content_length: int):
+def _read_remaining_body(
+    client_socket: socket.socket, initial_body: str, content_length: int
+) -> str:
     """
     Parameters:
         client_socket: socket
@@ -49,7 +108,7 @@ def _parse_body(client_socket: socket.socket, initial_body: str, content_length:
         content_length: int
 
     Returns:
-        full_body
+        full_body: str
     """
 
     remaining_size = content_length - len(initial_body)
@@ -64,14 +123,14 @@ def _parse_body(client_socket: socket.socket, initial_body: str, content_length:
     return full_body
 
 
-def request_parser(client_socket: socket.socket) -> Tuple[Dict[str, str | int], str]:
+def request_parser(client_socket: socket.socket) -> Tuple[Dict[str, any], any]:
     """
     Parameters:
         client_socket
 
     Returns:
         headers: dict
-        request_body: str
+        request_body: any
 
     Notes:
         Simplified HTTP1.1 req/res structure:
@@ -90,7 +149,7 @@ def request_parser(client_socket: socket.socket) -> Tuple[Dict[str, str | int], 
     raw_headers = ""
 
     body = ""
-    headers: Dict[str, str | int] = {}
+    headers: Dict[str, str | any] = {}
 
     # Read the request line and headers
     while True:
@@ -108,6 +167,11 @@ def request_parser(client_socket: socket.socket) -> Tuple[Dict[str, str | int], 
 
     # If body has data, read remaining bytes to complete it
     if content_length > len(body):
-        body = _parse_body(client_socket, body, content_length)
+        body = _read_remaining_body(client_socket, body, content_length)
 
-    return (headers, body)
+    # Parsing body based on Content-Type
+    if "Content-Type" in headers:
+        # print(f"Before Parsing body: {body}")
+        body = _parse_body(body, headers["Content-Type"])
+
+    return headers, body

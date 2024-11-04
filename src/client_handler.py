@@ -4,6 +4,10 @@ from typing import Tuple
 from utility.request_parser import request_parser
 from utility.response import find_file, generate_headers, send_file_response
 
+from globals import LOG_ADDRESS
+from utility.logger import log_request
+
+
 # type alias ip:port
 socket_address = Tuple[str, int]
 
@@ -13,11 +17,13 @@ def client_handler(client_socket: socket.socket, address: socket_address) -> Non
 
     headers, body = request_parser(client_socket)
 
-    # Print request details
+    headers["ip"] = address[0]
+    headers["port"] = address[1]
+
     print(f"\nrequest url: {headers['url']}")
     print(f"request body: {body}\n")
 
-    # Todo: Save Request body
+    log_request(LOG_ADDRESS, headers, body)
 
     res_file = find_file(headers["url"])
     res_headers = generate_headers(res_file)

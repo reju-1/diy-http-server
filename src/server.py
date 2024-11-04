@@ -4,8 +4,6 @@ import threading
 from pathlib import Path
 from client_handler import client_handler
 
-# Change the working directory to where the script is located Note: src/
-os.chdir(Path(__file__).parent)
 
 HOST: str = "localhost"
 PORT: int = 8080

@@ -1,6 +1,7 @@
 import socket
 from pathlib import Path
-from typing import Tuple, Dict
+
+from globals import BASE_DIR
 
 import mimetypes
 
@@ -11,25 +12,8 @@ mimetypes.add_type("video/x-matroska", ".mkv")
 CHUNK_SIZE: int = 1024 * 4  # 4KB
 
 
-def send_file_response(client_socket: socket.socket, headers: str, file_path: str):
-    """
-    Sends a file response to the client along with Headers
-    """
-
-    try:
-        # Sending Headers
-        client_socket.sendall(headers.encode())
-
-        # Streaming files
-        with open(file_path, "rb") as f:
-            while data := f.read(CHUNK_SIZE):
-                client_socket.sendall(data)
-
-    finally:
-        client_socket.close()
-
-
-def generate_headers(file_name: str) -> str:
+def _generate_headers(file_name: str) -> str:
+    """Generates HTTP header based on MIME-type of a file"""
 
     mime_type, _ = mimetypes.guess_type(file_name)
     mime_type = mime_type or "application/octet-stream"  # For Unknown Default is binary
@@ -54,19 +38,36 @@ def find_file(file_name: str) -> str:
     Returns 'index.html' if '/' is requested, or 'not-found.html' if the file is missing.
     """
 
-    current_dir = str(Path(__file__).parent)  # path-to-src/utility
-
     if file_name == "/":
-        return f"{current_dir}/../views/index.html"
+        return f"{BASE_DIR}/views/index.html"
 
     # Searching on /views directory
-    file_path = Path(f"{current_dir}/../views{file_name}")
+    file_path = Path(f"{BASE_DIR}/views{file_name}")
     if file_path.exists():
         return str(file_path)
 
     # Searching on /public directory
-    file_path = Path(f"{current_dir}/../../public{file_name}")
+    file_path = Path(f"{BASE_DIR}/../public{file_name}")
     if file_path.exists():
         return str(file_path)
 
-    return f"{current_dir}/../views/not-found.html"
+    return f"{BASE_DIR}/views/not-found.html"
+
+
+def send_file_response(client_socket: socket.socket, file_path: str) -> None:
+    """
+    Sends a file response to the client along with Headers
+    """
+    headers = _generate_headers(file_path)
+
+    try:
+        # Sending Headers
+        client_socket.sendall(headers.encode())
+
+        # Streaming files
+        with open(file_path, "rb") as f:
+            while data := f.read(CHUNK_SIZE):
+                client_socket.sendall(data)
+
+    finally:
+        client_socket.close()

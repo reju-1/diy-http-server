@@ -2,7 +2,7 @@ import socket
 from typing import Tuple
 
 from utility.request_parser import request_parser
-from utility.response import find_file, generate_headers, send_file_response
+from utility.response import find_file, send_file_response
 
 from globals import LOG_ADDRESS
 from utility.logger import log_request
@@ -26,5 +26,4 @@ def client_handler(client_socket: socket.socket, address: socket_address) -> Non
     log_request(LOG_ADDRESS, headers, body)
 
     res_file = find_file(headers["url"])
-    res_headers = generate_headers(res_file)
-    send_file_response(client_socket, res_headers, res_file)
+    send_file_response(client_socket, res_file)

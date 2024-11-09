@@ -1,26 +1,28 @@
-// import { fetchFileAndShow } from '/js/fileActions.js';
+import { loadMedia } from "./modal-script.js";
 
 function fetchFileAndShow(file) {
     console.log(file);
+
+    //Todo: handle pdf to open new tab
+    loadMedia(file["file-name"]);
 }
 
 const apiResponse = [
     {
-        "file-name": "13 Hours The Secret Soldiers of Benghazi (2016).mp4",
+        "file-name": "demo.mkv",
         size: "10.6Mb",
         modified: "2023-11-15 14:59:15",
     },
     {
-        "file-name": "A Silent Voice (2016)",
-        size: "700.gp",
+        "file-name": "A Silent Voice (2016).jpg",
+        size: "700.kb",
         modified: "2024-02-06 15:49:51",
     },
     {
-        "file-name": "Alice Through the Looking Glass (2016).pdf",
-        size: "100.0gp",
+        "file-name": "f3.jpg",
+        size: "100.0kb",
         modified: "2023-07-19 03:55:20",
     },
-    // Add more files as needed
 ];
 
 // Function to load files into the HTML
@@ -49,15 +51,15 @@ function loadFiles(files) {
 function getFileIcon(fileName) {
     const images = ["png", "jpg", "jpeg", "svg"];
     const videos = ["mp4", "mkv"];
-
     const extension = fileName.split(".").pop().toLowerCase();
+
     if (images.includes(extension)) {
         return "🏞️";
     } else if (videos.includes(extension)) {
         return "▶️";
     } else if (extension === "pdf") {
         return "📕";
-    } else if (extension == "zip") {
+    } else if (extension === "zip") {
         return "📦";
     }
 

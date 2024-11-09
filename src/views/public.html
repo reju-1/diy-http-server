@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Listing</title>
-    <link rel="stylesheet" href="./css/styles.css">
+    <link rel="stylesheet" href="./css/public.css">
+    <link rel="stylesheet" href="css/modal.css">
 </head>
 
 <body>
@@ -24,11 +25,19 @@
                 <span class="size">Size</span>
                 <span class="modified">Modified</span>
             </div>
-            <div id="file-container"></div>
+            <div id="file-container">
+                <!-- files and folders will be added here by Js -->
+            </div>
+        </div>
+
+        <div class="modal-media-container">
+            <button class="modal-close-btn" onclick="ClearAndCloseModal()">x</button>
+            <!-- Img/Video will be added here by Js -->
         </div>
     </div>
 
-    <script src="./js/script.js"></script>
+    <script type="module" src="./js/modal-script.js"></script>
+    <script type="module" src="./js/script.js"></script>
 </body>
 
 </html>

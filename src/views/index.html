@@ -5,27 +5,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-
+    <link rel="stylesheet" href="css/styles.css">
     <title>Index</title>
-
-    <style>
-        .container {
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-
-            h1 {
-                font-size: 3rem;
-                color: #334;
-            }
-        }
-    </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>This is Index page</h1>
+        <h1>Features</h1>
+        <ul id="ul-root">
+            <li>
+                <span>A. Parsing</span>
+                <ul>
+                    <li>Headers parsing</li>
+                    <li>Query parameters</li>
+                    <li>URL-encoded body</li>
+                    <li>JSON body parsing</li>
+                </ul>
+            </li>
+            <li>
+                <span>B. HTTP Response </span>
+                <ul>
+                    <li>JSON Response (Based on Request Headers)</li>
+                    <li>All types of static files Response</li>
+                </ul>
+            </li>
+            <li>
+                <span>C. Additional </span>
+                <ul>
+                    <li>Concurrency</li>
+                    <li>No External Libraries</li>
+                </ul>
+            </li>
+        </ul>
+
+        <a id="visit" href="public.html">Click to Go file server</a>
     </div>
 </body>
 

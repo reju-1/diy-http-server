@@ -9,7 +9,7 @@ export function loadMedia(file_url) {
 
     let mediaElement;
 
-    if (["jpg", "jpeg", "png", "svg"].includes(fileType)) {
+    if (["jpg", "jpeg", "png", "svg", "ico"].includes(fileType)) {
         mediaElement = document.createElement("img");
         mediaElement.src = file_url;
         mediaElement.alt = file_url;

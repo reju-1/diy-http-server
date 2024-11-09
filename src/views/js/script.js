@@ -7,23 +7,26 @@ function fetchFileAndShow(file) {
     loadMedia(file["file-name"]);
 }
 
-const apiResponse = [
-    {
-        "file-name": "demo.mkv",
-        size: "10.6Mb",
-        modified: "2023-11-15 14:59:15",
-    },
-    {
-        "file-name": "A Silent Voice (2016).jpg",
-        size: "700.kb",
-        modified: "2024-02-06 15:49:51",
-    },
-    {
-        "file-name": "f3.jpg",
-        size: "100.0kb",
-        modified: "2023-07-19 03:55:20",
-    },
-];
+async function getApiResponse() {
+    try {
+        const response = await fetch("/", {
+            method: "GET",
+            headers: {
+                "Accept": "application/json",
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(data);
+        return data;
+    } catch (error) {
+        console.error("Error fetching the API response:", error);
+    }
+}
 
 // Function to load files into the HTML
 function loadFiles(files) {
@@ -49,7 +52,7 @@ function loadFiles(files) {
 }
 
 function getFileIcon(fileName) {
-    const images = ["png", "jpg", "jpeg", "svg"];
+    const images = ["png", "jpg", "jpeg", "svg", "ico"];
     const videos = ["mp4", "mkv"];
     const extension = fileName.split(".").pop().toLowerCase();
 
@@ -67,6 +70,7 @@ function getFileIcon(fileName) {
 }
 
 // Load files on page load
-window.onload = () => {
+window.onload = async () => {
+    const apiResponse = await getApiResponse();
     loadFiles(apiResponse);
 };

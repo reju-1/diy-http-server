@@ -1,7 +1,7 @@
 import socket
 from pathlib import Path
 
-from globals import BASE_DIR
+from constant import BASE_DIR, PUBLIC_DIR
 
 import mimetypes
 
@@ -46,8 +46,8 @@ def find_file(file_name: str) -> str:
     if file_path.exists():
         return str(file_path)
 
-    # Searching on /public directory
-    file_path = Path(f"{BASE_DIR}/../public{file_name}")
+    # Searching on public/ directory
+    file_path = Path(f"{PUBLIC_DIR}{file_name}")  # "path-to-public + /file_name.txt"
     if file_path.exists():
         return str(file_path)
 

@@ -2,8 +2,9 @@ import json
 import socket
 from pathlib import Path
 from datetime import datetime
+from constant import PUBLIC_DIR
 
-content_path = Path("./public")
+content_path = Path(PUBLIC_DIR)
 
 
 def send_json_response(socket: socket.socket, headers: dict[str, any]) -> None:

@@ -1,7 +1,7 @@
 import socket
 from typing import Tuple
 
-from globals import LOG_ADDRESS
+from constant import LOG_ADDRESS
 from middleware.request_parser import request_parser
 from utility.logger import log_request
 from utility.response import find_file, send_file_response

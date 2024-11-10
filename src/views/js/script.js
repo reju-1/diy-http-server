@@ -9,7 +9,7 @@ function fetchFileAndShow(file) {
 
 async function getApiResponse() {
     try {
-        const response = await fetch("/", {
+        const response = await fetch("/api", {
             method: "GET",
             headers: {
                 "Accept": "application/json",

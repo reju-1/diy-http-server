@@ -24,7 +24,7 @@ def client_handler(client_socket: socket.socket, address: socket_address) -> Non
 
     log_request(LOG_ADDRESS, headers, body)
 
-    if headers.get("Accept") == "application/json":
+    if headers.get("Accept") == "application/json" or "/api" in headers.get("url", ""):
         return send_json_response(socket=client_socket, headers=headers)
 
     res_file = find_file(headers["url"])

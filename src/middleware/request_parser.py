@@ -1,67 +1,64 @@
 import json
 import socket
 from typing import Tuple, Dict, Any, Optional
-
 from urllib.parse import unquote_plus
 
 
 CHUNK_SIZE: int = 1024 * 4  # 4KB
 
 
-def _parse_url_encoded_body(body: str) -> Dict[str, any]:
+def request_parser(client_socket: socket.socket) -> Tuple[Dict[str, any], any]:
     """
-    Parses a URL-encoded body string into a dictionary.
-    """
-    parsed_data = {}
-
-    """key1=value1&key2=value2"""
-    pairs = body.split("&")
-    for pair in pairs:
-        if "=" in pair:
-            key, value = pair.split("=", 1)
-
-            key = unquote_plus(key).strip()
-            value = unquote_plus(value)
-
-            parsed_data[key] = _parse_string(value)
-        else:
-            # For key with no value (e.g., "key=")
-            parsed_data[unquote_plus(pair)] = ""
-
-    return parsed_data
-
-
-def _parse_json_body(body: str) -> Dict[str, any]:
-    """
-    Parses JSON body data into a dictionary.
-    """
-    try:
-        return json.loads(body)
-    except json.JSONDecodeError:
-        return {}  # for invalid Json
-
-
-def _parse_body(body: str, content_type: str) -> dict | str:
-    """
-    Parse request body
-
     Parameters:
-        body: str
-        content_type: str
+        client_socket
 
     Returns:
-        [str or dict]
+        headers: dict
+        request_body: any
+
+    Notes:
+        Simplified HTTP1.1 req/res structure:
+            request = request-line + Headers + "\r\n\r\n" + Body (optional)
+            response = status-line + Headers + "\r\n\r\n" + Body (optional)
+
+        --------------------------------------------------------------------------------------------------------------------
+        Sample HTTP1.1 Request:
+        POST /submit HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 27\r\n\r\nname=rejo&age=21
+        Sample HTTP1.1 Response:
+        HTTP/1.1 200 OK\r\nContent-Type: Application/json\r\nContent-Length: 37\r\n\r\n{status: "User updated successfully"}
+        --------------------------------------------------------------------------------------------------------------------
     """
 
-    content_parser = {
-        "application/x-www-form-urlencoded": _parse_url_encoded_body,
-        "application/json": _parse_json_body,
-    }
+    request = ""
+    raw_headers = ""
 
-    if content_type in content_parser:
-        body = content_parser[content_type](body)
+    body = ""
+    headers: Dict[str, str | any] = {}
 
-    return body
+    # Read the request line and headers
+    while True:
+        chunk = client_socket.recv(CHUNK_SIZE).decode()
+        request += chunk
+        if "\r\n\r\n" in request:  # Check for header-body separator
+            raw_headers, body = request.split("\r\n\r\n", 1)
+            break
+
+    headers = _parse_header(raw_headers)
+
+    content_length = 0
+    if "Content-Length" in headers:
+        content_length = headers["Content-Length"]
+
+    # If body has data, read remaining bytes to complete it
+    if content_length > len(body):
+        body = _read_remaining_body(client_socket, body, content_length)
+
+    # Parsing body based on Content-Type
+    if "Content-Type" in headers:
+        # print(f"Before Parsing body: {body}")
+        body = _parse_body(body, headers["Content-Type"])
+
+    return headers, body
 
 
 def _parse_header(raw_headers: str) -> Dict[str, any]:
@@ -156,55 +153,57 @@ def _read_remaining_body(
     return full_body
 
 
-def request_parser(client_socket: socket.socket) -> Tuple[Dict[str, any], any]:
+def _parse_body(body: str, content_type: str) -> dict | str:
     """
+    Parse request body
+
     Parameters:
-        client_socket
+        body: str
+        content_type: str
 
     Returns:
-        headers: dict
-        request_body: any
-
-    Notes:
-        Simplified HTTP1.1 req/res structure:
-            request = request-line + Headers + "\r\n\r\n" + Body (optional)
-            response = status-line + Headers + "\r\n\r\n" + Body (optional)
-
-        --------------------------------------------------------------------------------------------------------------------
-        Sample HTTP1.1 Request:
-        POST /submit HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 27\r\n\r\nname=rejo&age=21
-        Sample HTTP1.1 Response:
-        HTTP/1.1 200 OK\r\nContent-Type: Application/json\r\nContent-Length: 37\r\n\r\n{status: "User updated successfully"}
-        --------------------------------------------------------------------------------------------------------------------
+        [str or dict]
     """
 
-    request = ""
-    raw_headers = ""
+    content_parser = {
+        "application/x-www-form-urlencoded": _parse_url_encoded_body,
+        "application/json": _parse_json_body,
+    }
 
-    body = ""
-    headers: Dict[str, str | any] = {}
+    if content_type in content_parser:
+        body = content_parser[content_type](body)
 
-    # Read the request line and headers
-    while True:
-        chunk = client_socket.recv(CHUNK_SIZE).decode()
-        request += chunk
-        if "\r\n\r\n" in request:  # Check for header-body separator
-            raw_headers, body = request.split("\r\n\r\n", 1)
-            break
+    return body
 
-    headers = _parse_header(raw_headers)
 
-    content_length = 0
-    if "Content-Length" in headers:
-        content_length = headers["Content-Length"]
+def _parse_url_encoded_body(body: str) -> Dict[str, any]:
+    """
+    Parses a URL-encoded body string into a dictionary.
+    """
+    parsed_data = {}
 
-    # If body has data, read remaining bytes to complete it
-    if content_length > len(body):
-        body = _read_remaining_body(client_socket, body, content_length)
+    """key1=value1&key2=value2"""
+    pairs = body.split("&")
+    for pair in pairs:
+        if "=" in pair:
+            key, value = pair.split("=", 1)
 
-    # Parsing body based on Content-Type
-    if "Content-Type" in headers:
-        # print(f"Before Parsing body: {body}")
-        body = _parse_body(body, headers["Content-Type"])
+            key = unquote_plus(key).strip()
+            value = unquote_plus(value)
 
-    return headers, body
+            parsed_data[key] = _parse_string(value)
+        else:
+            # For key with no value (e.g., "key=")
+            parsed_data[unquote_plus(pair)] = ""
+
+    return parsed_data
+
+
+def _parse_json_body(body: str) -> Dict[str, any]:
+    """
+    Parses JSON body data into a dictionary.
+    """
+    try:
+        return json.loads(body)
+    except json.JSONDecodeError:
+        return {}  # for invalid Json

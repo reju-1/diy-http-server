@@ -1,5 +1,6 @@
 """This module is for log request"""
 
+import json
 import time
 from threading import Lock
 
@@ -35,3 +36,39 @@ def log_request(dest: str, headers: dict, body: any) -> None:
 
     except IOError as e:
         print(f"Failed to write log to {dest}: {e}")
+
+
+def log_console(headers: dict, body: str) -> None:
+    """Log request to console in tabular format."""
+
+    body_info = body
+
+    # Ensuring body is a string or Dict
+    if isinstance(body_info, dict):
+        body_info = json.dumps(body)
+    elif not isinstance(body, str):
+        body_info = ""
+
+    # Defining column widths
+    key_width = 20
+    value_width = 40
+    separator = "+----------------------+------------------------------------------+"
+
+    print("\n\nLog request: ")
+    print(separator)
+    print(f"| {'Fields':<{key_width}} | {'Values':<{value_width}} |")
+    print(separator)
+
+    connection_info = f"{headers['ip']}:{headers['port']}"
+
+    print(f"| {'Connection from':<{key_width}} | {connection_info:<{value_width}} |")
+    print(f"| {'Method':<{key_width}} | {headers.get('method'):<{value_width}} |")
+    print(f"| {'Request URL':<{key_width}} | {headers['url']:<{value_width}} |")
+
+    if headers.get("query"):
+        print(f"| {'Query':<{key_width}} | {headers['query']:<{value_width}} |")
+
+    if body_info:
+        print(f"| {'Req-Body':<{key_width}} | {body_info:<{value_width}} |")
+
+    print(separator)

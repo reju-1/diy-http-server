@@ -1,6 +1,7 @@
 import json
 import socket
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Any, Optional
+
 from urllib.parse import unquote_plus
 
 
@@ -13,13 +14,16 @@ def _parse_url_encoded_body(body: str) -> Dict[str, any]:
     """
     parsed_data = {}
 
+    """key1=value1&key2=value2"""
     pairs = body.split("&")
     for pair in pairs:
         if "=" in pair:
             key, value = pair.split("=", 1)
 
-            # Decode and strip each key and value
-            parsed_data[unquote_plus(key)] = unquote_plus(value)
+            key = unquote_plus(key).strip()
+            value = unquote_plus(value)
+
+            parsed_data[key] = _parse_string(value)
         else:
             # For key with no value (e.g., "key=")
             parsed_data[unquote_plus(pair)] = ""
@@ -79,22 +83,52 @@ def _parse_header(raw_headers: str) -> Dict[str, any]:
     request_line, *headers_list = raw_headers.split("\r\n")
 
     # GET /home HTTP/1.1
-    headers["method"], headers["url"], headers["version"] = request_line.split(" ")
+    headers["method"], raw_url, headers["version"] = request_line.split(" ")
+
+    headers["url"], headers["query"] = _parse_query_params(raw_url)
 
     # Parse headers into a dictionary
     for line in headers_list:
         if ": " in line:
             key, value = line.split(": ", 1)
 
-            key = key.strip()
-            value = value.strip()
+            headers[key.strip()] = _parse_string(value.strip())
 
-            try:
-                headers[key] = float(value) if "." in value else int(value)
-            except ValueError:
-                headers[key] = value  # Keep as string if not a number
+    # for header in headers.items():
+    #     print(header)
 
     return headers
+
+
+def _parse_query_params(raw_url: str) -> Tuple[str, Optional[Dict[str, Any]]]:
+    """
+    Parse query params from the given string.
+
+    Example:
+        Input: /url?name=John&age=20
+        Return: ('/url', {'name': 'John', 'age': 20})
+    """
+
+    if "?" not in raw_url:
+        return raw_url, None
+
+    url, param_str = raw_url.split("?", 1)
+    query_params = {}
+
+    for param in param_str.split("&"):
+        key, value = param.split("=")
+        query_params[key] = _parse_string(value)
+
+    return url, query_params
+
+
+def _parse_string(input_str: str) -> int | float | str:
+    """Try to parse a String to number if not possible retune the given string"""
+
+    try:
+        return float(input_str) if "." in input_str else int(input_str)
+    except ValueError:
+        return input_str  # Keep as string if not a number
 
 
 def _read_remaining_body(

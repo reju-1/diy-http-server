@@ -21,12 +21,8 @@ def send_json_response(socket: socket.socket, headers: dict[str, any]) -> None:
         "\r\n"
     )
 
-    try:
-        socket.sendall(response_headers.encode("utf-8"))
-        socket.sendall(file_info_json.encode("utf-8"))
-
-    finally:
-        socket.close()
+    socket.sendall(response_headers.encode("utf-8"))
+    socket.sendall(file_info_json.encode("utf-8"))
 
 
 def _get_files(path: str = "/") -> json:

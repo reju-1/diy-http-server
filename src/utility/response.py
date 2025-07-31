@@ -60,14 +60,10 @@ def send_file_response(client_socket: socket.socket, file_path: str) -> None:
     """
     headers = _generate_headers(file_path)
 
-    try:
-        # Sending Headers
-        client_socket.sendall(headers.encode())
+    # Sending Headers
+    client_socket.sendall(headers.encode())
 
-        # Streaming files
-        with open(file_path, "rb") as f:
-            while data := f.read(CHUNK_SIZE):
-                client_socket.sendall(data)
-
-    finally:
-        client_socket.close()
+    # Streaming files
+    with open(file_path, "rb") as f:
+        while data := f.read(CHUNK_SIZE):
+            client_socket.sendall(data)

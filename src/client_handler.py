@@ -13,17 +13,19 @@ socket_address = Tuple[str, int]
 
 def client_handler(client_socket: socket.socket, address: socket_address) -> None:
     # print(f"Accepted connection from {address[0]}:{address[1]}")
+    with client_socket:
+        headers, body = request_parser(client_socket)
 
-    headers, body = request_parser(client_socket)
+        headers["ip"] = address[0]
+        headers["port"] = address[1]
 
-    headers["ip"] = address[0]
-    headers["port"] = address[1]
+        log_console(headers, body)
+        log_request(LOG_ADDRESS, headers, body)
 
-    log_console(headers, body)
-    log_request(LOG_ADDRESS, headers, body)
+        if headers.get("Accept") == "application/json" or "/api" in headers.get(
+            "url", ""
+        ):
+            return send_json_response(socket=client_socket, headers=headers)
 
-    if headers.get("Accept") == "application/json" or "/api" in headers.get("url", ""):
-        return send_json_response(socket=client_socket, headers=headers)
-
-    res_file = find_file(headers["url"])
-    send_file_response(client_socket, res_file)
+        res_file = find_file(headers["url"])
+        send_file_response(client_socket, res_file)

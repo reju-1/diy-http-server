@@ -1,8 +1,7 @@
 import json
 import socket
 from typing import Tuple, Dict, Any, Optional
-from urllib.parse import unquote_plus
-
+from urllib.parse import unquote_plus, unquote
 
 CHUNK_SIZE: int = 1024 * 4  # 4KB
 
@@ -105,6 +104,7 @@ def _parse_query_params(raw_url: str) -> Tuple[str, Optional[Dict[str, Any]]]:
         Input: /url?name=John&age=20
         Return: ('/url', {'name': 'John', 'age': 20})
     """
+    raw_url = unquote(raw_url)
 
     if "?" not in raw_url:
         return raw_url, None
